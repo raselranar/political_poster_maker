@@ -1,13 +1,15 @@
 import express, { type ErrorRequestHandler } from "express";
 import cors from "cors";
 const app = express();
+import "dotenv/config";
+import { connectDB } from "./config/db.js";
+const PORT = process.env.PORT || 5000;
 
 // middleware
 app.use(cors());
 app.use(express.json());
-
 // routes
-app.get("/api", (req, res) => {
+app.get("/", (req, res) => {
   res.send({ success: true, message: "server is running" });
 });
 
@@ -20,7 +22,14 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
 
 app.use(globalErrorHandler);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+const startServer = async () => {
+  await connectDB();
+
+  app.listen(PORT, () => {
+    console.log(
+      `Server running on port ${PORT}; URL: http://localhost:${PORT}`,
+    );
+  });
+};
+
+startServer();
