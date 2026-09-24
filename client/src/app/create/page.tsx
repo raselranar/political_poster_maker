@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "@/components/ui/toast";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -55,6 +56,7 @@ export default function CreatePosterPage() {
   });
 
   function onSubmit(values: any) {
+    toast.add({ title: "Form Submitted Successfully" });
     console.log({
       templateId,
       formData: values,
