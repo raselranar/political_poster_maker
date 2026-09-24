@@ -26,13 +26,11 @@ export const authenticate = (
 
     // get only the  token
     const token = authHeader.split(" ")[1] as string;
-
     // decode the jwt token
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
       userId: string;
       role: "user" | "admin";
     };
-
     req.user = decoded;
     next();
   } catch (err) {

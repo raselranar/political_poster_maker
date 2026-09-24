@@ -5,6 +5,7 @@ import "dotenv/config";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
 import templateRoutes from "./routes/template.routes.js";
+import uploadRoutes from "./routes/upload.routes.js";
 const PORT = process.env.PORT || 5000;
 
 // middleware
@@ -21,6 +22,9 @@ app.use("/api/auth", authRoutes);
 
 // template routes
 app.use("/api/templates", templateRoutes);
+
+// upload routes
+app.use("/api/upload", uploadRoutes);
 
 // global error handler
 const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
