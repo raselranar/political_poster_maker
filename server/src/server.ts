@@ -6,6 +6,7 @@ import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/auth.routes.js";
 import templateRoutes from "./routes/template.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
+import posterRoutes from "./routes/poster.routes.js";
 const PORT = process.env.PORT || 5000;
 
 // middleware
@@ -25,6 +26,9 @@ app.use("/api/templates", templateRoutes);
 
 // upload routes
 app.use("/api/upload", uploadRoutes);
+
+// poster creating routes
+app.use("/api/posters", posterRoutes);
 
 // global error handler
 const globalErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
