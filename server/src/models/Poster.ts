@@ -25,7 +25,7 @@ export interface Poster extends Document {
 
   aiLayout?: Record<string, unknown>;
 
-  errorMessage?: string;
+  errorMessage?: string | undefined;
 
   createdAt: Date;
   updatedAt: Date;

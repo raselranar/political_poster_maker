@@ -2,6 +2,7 @@ import type { Response } from "express";
 import type { AuthRequest } from "../middleware/auth.js";
 import { Template } from "../models/Template.js";
 import { Poster } from "../models/Poster.js";
+import { generatePoster } from "../services/poster-generation.service.js";
 
 export const createPoster = async (req: AuthRequest, res: Response) => {
   try {
@@ -75,6 +76,10 @@ export const createPoster = async (req: AuthRequest, res: Response) => {
       regenerationCount: 0,
     });
 
+    generatePoster(poster._id.toString()).catch((error) => {
+      console.error("Background poster generation error:", error);
+    });
+
     return res.status(201).json({
       success: true,
       message: "Poster generation started",
@@ -89,6 +94,43 @@ export const createPoster = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to create poster",
+    });
+  }
+};
+
+export const getPosterById = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    const poster = await Poster.findOne({
+      _id: req.params.id,
+      userId,
+    }).populate("templateId");
+
+    if (!poster) {
+      return res.status(404).json({
+        success: false,
+        message: "Poster not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      poster,
+    });
+  } catch (error) {
+    console.error("Get poster error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch poster",
     });
   }
 };
