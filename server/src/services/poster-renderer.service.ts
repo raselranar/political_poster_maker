@@ -42,6 +42,69 @@ const fontUrl = pathToFileURL(
   path.resolve(process.cwd(), "assets/fonts/NotoSansBengali.ttf"),
 ).href;
 
+const getRgb = (color: string) => {
+  const hex = color.replace(/^#/, "");
+  const normalized =
+    hex.length === 3
+      ? hex
+          .split("")
+          .map((character) => character + character)
+          .join("")
+      : hex;
+
+  if (!/^[0-9a-f]{6}$/i.test(normalized)) {
+    return null;
+  }
+
+  return [0, 2, 4].map((index) =>
+    parseInt(normalized.slice(index, index + 2), 16),
+  );
+};
+
+const getLuminance = (color: string) => {
+  const rgb = getRgb(color);
+
+  if (!rgb) {
+    return null;
+  }
+
+  const channels = rgb.map((channel) => {
+    const value = channel / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  });
+
+  return 0.2126 * channels[0]! + 0.7152 * channels[1]! + 0.0722 * channels[2]!;
+};
+
+const getReadableTextColor = (
+  backgroundColor: string,
+  primaryColor: string,
+) => {
+  const backgroundLuminance = getLuminance(backgroundColor);
+
+  if (backgroundLuminance === null) {
+    return primaryColor || "#111827";
+  }
+
+  const candidates = [primaryColor, "#111827", "#FFFFFF"].filter(Boolean);
+  const readableColor = candidates
+    .map((color) => {
+      const luminance = getLuminance(color);
+
+      return {
+        color,
+        contrast:
+          luminance === null
+            ? 0
+            : (Math.max(backgroundLuminance, luminance) + 0.05) /
+              (Math.min(backgroundLuminance, luminance) + 0.05),
+      };
+    })
+    .sort((first, second) => second.contrast - first.contrast)[0];
+
+  return readableColor?.color || "#111827";
+};
+
 export const renderPoster = async ({
   name,
   designation,
@@ -78,6 +141,7 @@ export const renderPoster = async ({
       organization: organization || "",
       footer: district,
     };
+    const textColor = getReadableTextColor(backgroundColor, primaryColor);
 
     const photoHtml = photoSlots
       .map((slot, index) => {
@@ -104,26 +168,55 @@ export const renderPoster = async ({
       })
       .join("");
 
+    const fontScale: Record<TextSlot["type"], { min: number; max: number }> = {
+      headline: { min: 32, max: 54 },
+      name: { min: 34, max: 50 },
+      designation: { min: 22, max: 35 },
+      organization: { min: 20, max: 32 },
+      footer: { min: 20, max: 30 },
+    };
+
     const getFontSize = (slot: TextSlot, value: string) => {
+      const scale = fontScale[slot.type];
+      const baseSize = Math.min(slot.fontSize, scale.max);
+
       if (slot.type !== "headline") {
-        return slot.fontSize;
+        return Math.max(scale.min, baseSize);
       }
 
-      const length = value.length;
+      const characterCount = Array.from(value).length;
+      const lengthScale =
+        characterCount > 95
+          ? 0.62
+          : characterCount > 65
+            ? 0.72
+            : characterCount > 40
+              ? 0.82
+              : 1;
 
-      if (length > 100) {
-        return Math.max(40, slot.fontSize * 0.55);
+      return Math.max(scale.min, baseSize * lengthScale);
+    };
+
+    const getSlotTop = (slot: TextSlot) => {
+      if (slot.type !== "footer") {
+        return slot.y;
       }
 
-      if (length > 70) {
-        return Math.max(45, slot.fontSize * 0.7);
-      }
+      const previousSlot = textSlots
+        .filter(
+          (candidate) =>
+            candidate.type !== "footer" &&
+            textValues[candidate.type] &&
+            candidate.y + candidate.height <= slot.y,
+        )
+        .sort((first, second) => second.y - first.y)[0];
 
-      if (length > 45) {
-        return Math.max(50, slot.fontSize * 0.85);
-      }
-
-      return slot.fontSize;
+      return previousSlot
+        ? Math.min(
+            slot.y,
+            previousSlot.y + Math.round(previousSlot.height * 0.65),
+          )
+        : slot.y;
     };
 
     const textHtml = textSlots
@@ -139,16 +232,17 @@ export const renderPoster = async ({
             class="text-slot"
             style="
               left: ${slot.x}px;
-              top: ${slot.y}px;
+              top: ${getSlotTop(slot)}px;
               width: ${slot.width}px;
               height: ${slot.height}px;
               font-size: ${getFontSize(slot, value)}px;
-              font-weight: ${slot.fontWeight};
+              --min-font-size: ${fontScale[slot.type].min}px;
+              font-weight: ${slot.fontWeight ?? 500};
               text-align: ${slot.align};
-              color: ${primaryColor};
+              color: ${textColor};
             "
           >
-            ${escapeHtml(value)}
+            <span class="text-content">${escapeHtml(value)}</span>
           </div>
         `;
       })
@@ -235,15 +329,20 @@ export const renderPoster = async ({
               display: block;
             }
 
-           .text-slot {
-            position: absolute;
-            display: block;
-            padding: 10px;
-            line-height: 1.35;
-            overflow: visible;
-            word-break: break-word;
-            overflow-wrap: break-word;
-}
+            .text-slot {
+              position: absolute;
+              display: flex;
+              align-items: center;
+              padding: 10px 14px;
+              line-height: 1.3;
+              overflow: hidden;
+              word-break: break-word;
+              overflow-wrap: anywhere;
+            }
+
+            .text-content {
+              width: 100%;
+            }
           </style>
         </head>
 
@@ -268,6 +367,24 @@ export const renderPoster = async ({
 
     await page.evaluate(async () => {
       await document.fonts.ready;
+
+      document
+        .querySelectorAll<HTMLElement>(".text-slot")
+        .forEach((element) => {
+          let fontSize = parseFloat(getComputedStyle(element).fontSize);
+          const minFontSize = parseFloat(
+            getComputedStyle(element).getPropertyValue("--min-font-size"),
+          );
+
+          while (
+            fontSize > minFontSize &&
+            (element.scrollHeight > element.clientHeight + 1 ||
+              element.scrollWidth > element.clientWidth + 1)
+          ) {
+            fontSize -= 1;
+            element.style.fontSize = `${fontSize}px`;
+          }
+        });
 
       const images = Array.from(document.images);
 

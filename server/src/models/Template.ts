@@ -14,6 +14,8 @@ interface LayoutConfig {
   width: number;
   height: number;
   backgroundColor: string;
+  primaryColor: string;
+  secondaryColor: string;
   photoSlots: PhotoSlot[];
   textSlots: TextSlot[];
 }
@@ -69,6 +71,18 @@ const layoutConfigSchema = new Schema<LayoutConfig>(
     backgroundColor: {
       type: String,
       required: true,
+    },
+
+    primaryColor: {
+      type: String,
+      required: true,
+      default: "#111827",
+    },
+
+    secondaryColor: {
+      type: String,
+      required: true,
+      default: "#FFFFFF",
     },
 
     photoSlots: {

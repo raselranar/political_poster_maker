@@ -22,7 +22,7 @@ const templates = [
           y: 280,
           width: 600,
           height: 650,
-          borderRadius: 300,
+          borderRadius: 200,
         },
       ],
 

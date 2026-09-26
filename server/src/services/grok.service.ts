@@ -16,11 +16,11 @@ export const generatePosterLayout = async (
   photoCount: number,
 ): Promise<PosterLayout> => {
   const prompt = `
-You are a visual poster layout assistant.
+You are a professional poster layout assistant.
 
 Your job is ONLY to suggest visual layout properties.
 
-Do NOT generate, rewrite, translate, modify, or correct any user text.
+Do NOT generate, rewrite, translate, modify, correct, or invent any user text.
 
 The exact user-provided text will be rendered separately by the application.
 
@@ -34,13 +34,12 @@ Number of photos:
 ${photoCount}
 
 Return ONLY valid JSON.
+Do not return markdown.
+Do not add explanations.
 
 Use exactly this structure:
 
 {
-  "backgroundStyle": "short description",
-  "primaryColor": "#000000",
-  "secondaryColor": "#FFFFFF",
   "photoArrangement": "single",
   "decoration": [],
   "headlinePosition": "top-center",
@@ -51,12 +50,34 @@ Rules:
 
 - photoArrangement must be one of:
   single, two-column, three-column
-- decoration must be an array of short visual descriptions.
-- Do not include political slogans.
-- Do not invent names, organizations, locations, or other text.
-- Do not return markdown.
-`;
 
+- Choose photoArrangement according to the number of photos.
+
+- decoration must be an array of short visual descriptions.
+
+- Keep decorations minimal and professional.
+
+- Decorations must never contain text.
+
+- Decorations must not cover or interfere with user text.
+
+- headlinePosition must be one of:
+  top-center, top-left, top-right
+
+- footerStyle must be one of:
+  simple, centered, divided
+
+- Maintain strong visual hierarchy:
+  headline > name > designation > organization
+
+- Keep sufficient whitespace around text.
+
+- Do not include political slogans or political messaging.
+
+- Do not invent names, organizations, locations, slogans, or any other text.
+
+Return ONLY the JSON object.
+`;
   const response = await generateText({
     model: groq("openai/gpt-oss-20b"),
     prompt: prompt,

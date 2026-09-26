@@ -6,6 +6,7 @@ import { renderPoster } from "./poster-renderer.service.js";
 
 export const generatePoster = async (posterId: string) => {
   console.log("generatePoster started:", posterId);
+
   const poster = await Poster.findById(posterId);
 
   if (!poster) {
@@ -19,54 +20,41 @@ export const generatePoster = async (posterId: string) => {
       throw new Error("Template not found");
     }
 
-    /*
-     * 1. Ask Gemini for visual layout instructions.
-     */
+    // 1. Ask Groq for visual layout instructions.
+    // Groq should control layout only, not colors.
     const layout = await generatePosterLayout(
       poster.formData.occasion,
       template.title,
       poster.photoUrls.length,
     );
 
-    /*
-     * 2. Render the exact user content using Puppeteer.
-     */
+    // 2. Render exact user content using Puppeteer.
+    // Colors come from the selected template.
     const imageBuffer = await renderPoster({
       name: poster.formData.name,
       designation: poster.formData.designation,
       organization: poster.formData.organization,
       district: poster.formData.district,
       headline: poster.formData.headline,
-
       photoUrls: poster.photoUrls,
-
-      backgroundColor: template.layoutConfig.backgroundColor,
-
-      primaryColor: layout.primaryColor,
-      secondaryColor: layout.secondaryColor,
-      backgroundStyle: layout.backgroundStyle,
-
+      backgroundColor: template.layoutConfig.backgroundColor || "#FFFFFF",
+      primaryColor: template.layoutConfig.primaryColor || "#111827",
+      secondaryColor: template.layoutConfig.secondaryColor || "#FFFFFF",
+      // backgroundStyle: layout.backgroundStyle ?? "simple",
       photoSlots: template.layoutConfig.photoSlots,
       textSlots: template.layoutConfig.textSlots,
     });
 
-    /*
-     * 3. Upload generated PNG to Cloudinary.
-     */
+    // 3. Upload generated PNG to Cloudinary.
     const uploadedImage = await uploadBufferToCloudinary(
       imageBuffer,
       "ai-political-poster-maker/generated",
     );
 
-    /*
-     * 4. Save result.
-     */
+    // 4. Save result.
     poster.status = "completed";
-
     poster.generatedImageUrl = uploadedImage.secure_url;
-
     poster.aiLayout = layout;
-
     poster.errorMessage = undefined;
 
     await poster.save();
@@ -76,7 +64,6 @@ export const generatePoster = async (posterId: string) => {
     console.error(`Poster generation failed: ${posterId}`, error);
 
     poster.status = "failed";
-
     poster.errorMessage =
       error instanceof Error ? error.message : "Poster generation failed";
 
