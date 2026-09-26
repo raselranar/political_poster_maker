@@ -1,4 +1,5 @@
 import TemplateCard from "@/components/templates/TemplateCard";
+import BackLink from "@/components/navigation/BackLink";
 import { getTemplates } from "@/lib/api";
 
 export const metadata = {
@@ -11,6 +12,9 @@ const TemplatesPage = async () => {
   return (
     <main className="min-h-screen bg-background px-4 py-10">
       <div className="max-w-6xl mx-auto">
+        <BackLink href="/" className="mb-6">
+          Back to home
+        </BackLink>
         <header className="mb-8">
           <h1 className="text-3xl font-bold">Choose a Template</h1>
           <p className="mt-2 text-gray-600">

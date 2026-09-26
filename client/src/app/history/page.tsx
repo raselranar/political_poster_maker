@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { getMyPosters } from "@/lib/api";
+import BackLink from "@/components/navigation/BackLink";
 import type { Poster } from "@/types/poster";
 import { Download, Eye } from "lucide-react";
 import Image from "next/image";
@@ -55,11 +56,19 @@ export default function HistoryPage() {
   }
 
   if (error) {
-    return <main className="p-10 text-center text-red-600">{error}</main>;
+    return (
+      <main className="mx-auto max-w-6xl p-6">
+        <BackLink href="/">Back to home</BackLink>
+        <p className="mt-6 text-center text-red-600">{error}</p>
+      </main>
+    );
   }
 
   return (
     <main className="mx-auto max-w-6xl p-6">
+      <BackLink href="/" className="mb-6">
+        Back to home
+      </BackLink>
       <div className="mb-8">
         <h1 className="text-3xl font-bold">Poster History</h1>
 
@@ -105,7 +114,7 @@ export default function HistoryPage() {
               <div className="p-4">
                 <h2 className="font-semibold">{poster.formData.name}</h2>
 
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 line-clamp-2 text-sm text-gray-600">
                   {poster.formData.headline}
                 </p>
 

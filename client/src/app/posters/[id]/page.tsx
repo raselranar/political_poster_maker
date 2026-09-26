@@ -6,6 +6,7 @@ import { getPoster, regeneratePoster } from "@/lib/api";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import BackLink from "@/components/navigation/BackLink";
 import { Download, RefreshCw, Search } from "lucide-react";
 import { Poster } from "@/types/poster";
 
@@ -117,15 +118,30 @@ export default function PosterPreviewPage() {
   };
 
   if (loading) {
-    return <main className="p-10 text-center">Loading poster...</main>;
+    return (
+      <main className="mx-auto max-w-3xl p-6">
+        <BackLink href="/history">Back to history</BackLink>
+        <p className="mt-6 text-center">Loading poster...</p>
+      </main>
+    );
   }
 
   if (error && !poster) {
-    return <main className="p-10 text-center text-red-600">{error}</main>;
+    return (
+      <main className="mx-auto max-w-3xl p-6">
+        <BackLink href="/history">Back to history</BackLink>
+        <p className="mt-6 text-center text-red-600">{error}</p>
+      </main>
+    );
   }
 
   if (!poster) {
-    return <main className="p-10 text-center">Poster not found.</main>;
+    return (
+      <main className="mx-auto max-w-3xl p-6">
+        <BackLink href="/history">Back to history</BackLink>
+        <p className="mt-6 text-center">Poster not found.</p>
+      </main>
+    );
   }
 
   const regenerationCount = poster.regenerationCount ?? 0;
@@ -134,6 +150,9 @@ export default function PosterPreviewPage() {
 
   return (
     <main className="mx-auto max-w-3xl p-6">
+      <BackLink href="/history" className="mb-6">
+        Back to history
+      </BackLink>
       <h1 className="mb-2 text-3xl font-bold">Poster Preview</h1>
 
       <p className="mb-8 text-gray-600">{poster.formData.headline}</p>

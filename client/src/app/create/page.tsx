@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import BackLink from "@/components/navigation/BackLink";
 
 import {
   createPoster,
@@ -201,6 +202,9 @@ export default function CreatePage() {
 
   return (
     <main className="p-6 ">
+      <div className="mx-auto mb-4 max-w-xl">
+        <BackLink href="/templates">Back to templates</BackLink>
+      </div>
       <Card className="border max-w-xl mx-auto shadow-sm">
         <CardHeader className="space-y-2 p-6">
           <CardTitle className="text-3xl font-bold">Create Poster</CardTitle>
