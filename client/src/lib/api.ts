@@ -65,3 +65,12 @@ export async function getPoster(posterId: string, token: string) {
     cache: "no-store",
   });
 }
+// poster history api
+export async function getMyPosters(token: string) {
+  return apiRequest("/api/posters", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    cache: "no-store",
+  });
+}

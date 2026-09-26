@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { createPoster, uploadPhotos, getPoster } from "@/lib/api";
 import Image from "next/image";
@@ -50,13 +50,13 @@ export type FormValues = z.infer<typeof formSchema>;
 export default function CreatePage() {
   const searchParams = useSearchParams();
   const templateId = searchParams.get("template");
-
+  // hooks
   const [files, setFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
-  const [generatedImage, setGeneratedImage] = useState(null);
   const [error, setError] = useState("");
+  const router = useRouter();
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -87,7 +87,6 @@ export default function CreatePage() {
 
   const onSubmit = async (values: FormValues) => {
     setError("");
-    setGeneratedImage(null);
 
     if (!templateId) {
       setError("Template is missing.");
@@ -141,9 +140,9 @@ export default function CreatePage() {
         const poster = result.poster;
 
         if (poster.status === "completed") {
-          setGeneratedImage(poster.generatedImageUrl);
           setStatus("Poster generated successfully.");
           setLoading(false);
+          router.push(`/posters/${posterId}`);
           return;
         }
 
@@ -369,35 +368,6 @@ export default function CreatePage() {
               </Button>
             </FieldGroup>
           </form>
-
-          {status && !generatedImage && (
-            <div className="mt-8 rounded-lg border p-5 text-center">
-              <p className="font-medium">{status}</p>
-              {loading && (
-                <p className="mt-2 text-sm text-gray-500">Please wait...</p>
-              )}
-            </div>
-          )}
-
-          {generatedImage && (
-            <div className="mt-10">
-              <h2 className="mb-4 text-2xl font-bold">Your Poster</h2>
-              <Image
-                width={300}
-                height={300}
-                src={generatedImage}
-                alt="Generated poster"
-                className="mx-auto w-full max-w-xl rounded-lg shadow-lg"
-              />
-              <a
-                href={generatedImage}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={buttonVariants({ className: "mt-6 w-full" })}>
-                Open / Download Poster
-              </a>
-            </div>
-          )}
         </CardContent>
       </Card>
     </main>
