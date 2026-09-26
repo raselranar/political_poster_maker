@@ -2,23 +2,27 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getMyPosters } from "@/lib/api";
 
-export interface Poster {
-  _id: string;
-  generatedImageUrl?: string;
-  status: "draft" | "generating" | "completed" | "failed";
-  errorMessage?: string;
-  formData: {
-    name: string;
-    headline: string;
-  };
-}
+import { getMyPosters } from "@/lib/api";
+import type { Poster } from "@/types/poster";
+import { Download, Eye } from "lucide-react";
+import Image from "next/image";
+
+const getCloudinaryDownloadUrl = (url: string, customName = "poster") => {
+  if (!url) return "";
+
+  const attachmentFlag = `fl_attachment:${customName}`;
+
+  if (url.includes("/upload/") && !url.includes("fl_attachment")) {
+    return url.replace("/upload/", `/upload/${attachmentFlag}/`);
+  }
+
+  return url;
+};
+
 export default function HistoryPage() {
   const [posters, setPosters] = useState<Poster[]>([]);
-
   const [loading, setLoading] = useState(true);
-
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -77,21 +81,26 @@ export default function HistoryPage() {
       ) : (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {posters.map((poster) => (
-            <Link
+            <div
               key={poster._id}
-              href={`/posters/${poster._id}`}
               className="overflow-hidden rounded-xl border transition hover:shadow-lg">
-              {poster.generatedImageUrl ? (
-                <img
-                  src={poster.generatedImageUrl}
-                  alt="Poster"
-                  className="aspect-[3/4] w-full object-cover"
-                />
-              ) : (
-                <div className="flex aspect-[3/4] items-center justify-center bg-gray-100">
-                  <span className="text-gray-500">{poster.status}</span>
-                </div>
-              )}
+              <Link href={`/posters/${poster._id}`}>
+                {poster.generatedImageUrl ? (
+                  <Image
+                    width={600}
+                    height={600}
+                    src={poster.generatedImageUrl}
+                    alt={`Poster for ${poster.formData.name}`}
+                    className="aspect-3/4 w-full object-cover"
+                  />
+                ) : (
+                  <div className="flex aspect-3/4 items-center justify-center bg-gray-100">
+                    <span className="text-sm capitalize text-gray-500">
+                      {poster.status}
+                    </span>
+                  </div>
+                )}
+              </Link>
 
               <div className="p-4">
                 <h2 className="font-semibold">{poster.formData.name}</h2>
@@ -100,11 +109,47 @@ export default function HistoryPage() {
                   {poster.formData.headline}
                 </p>
 
-                <p className="mt-2 text-xs text-gray-400">
-                  {new Date(poster.createdAt).toLocaleDateString()}
-                </p>
+                <div className="mt-2 flex items-center justify-between">
+                  <p className="text-xs text-gray-400">
+                    {new Date(poster.createdAt).toLocaleDateString()}
+                  </p>
+
+                  <span
+                    className={`text-xs font-medium capitalize ${
+                      poster.status === "completed"
+                        ? "text-green-600"
+                        : poster.status === "failed"
+                          ? "text-red-600"
+                          : "text-gray-500"
+                    }`}>
+                    {poster.status}
+                  </span>
+                </div>
+
+                <div className="mt-4 flex gap-2">
+                  <Link
+                    href={`/posters/${poster._id}`}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-black px-3 py-2 text-sm font-medium text-white">
+                    <Eye className="size-4" />
+                    View
+                  </Link>
+
+                  {poster.status === "completed" &&
+                    poster.generatedImageUrl && (
+                      <Link
+                        href={getCloudinaryDownloadUrl(
+                          poster.generatedImageUrl,
+                          `poster-${poster._id}`,
+                        )}
+                        download
+                        className="flex flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium">
+                        <Download className="size-4" />
+                        Download
+                      </Link>
+                    )}
+                </div>
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}
