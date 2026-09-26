@@ -1,4 +1,16 @@
+import path from "node:path";
+import { pathToFileURL } from "node:url";
+
 import puppeteer from "puppeteer";
+import type { TextSlot } from "../../types/poster.tyes.js";
+
+interface PhotoSlot {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  borderRadius?: number;
+}
 
 interface RenderPosterOptions {
   name: string;
@@ -7,11 +19,28 @@ interface RenderPosterOptions {
   district: string;
   headline: string;
   photoUrls: string[];
+
   backgroundColor: string;
   primaryColor: string;
   secondaryColor: string;
   backgroundStyle?: string;
+
+  photoSlots: PhotoSlot[];
+  textSlots: TextSlot[];
 }
+
+const escapeHtml = (value: string) => {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
+const fontUrl = pathToFileURL(
+  path.resolve(process.cwd(), "assets/fonts/NotoSansBengali.ttf"),
+).href;
 
 export const renderPoster = async ({
   name,
@@ -24,6 +53,8 @@ export const renderPoster = async ({
   primaryColor,
   secondaryColor,
   backgroundStyle,
+  photoSlots,
+  textSlots,
 }: RenderPosterOptions): Promise<Buffer> => {
   const browser = await puppeteer.launch({
     executablePath: "/usr/bin/google-chrome",
@@ -40,22 +71,92 @@ export const renderPoster = async ({
       deviceScaleFactor: 1,
     });
 
-    const photosHtml = photoUrls
-      .map(
-        (url) => `
+    const textValues: Record<string, string> = {
+      headline,
+      name,
+      designation: designation || "",
+      organization: organization || "",
+      footer: district,
+    };
+
+    const photoHtml = photoSlots
+      .map((slot, index) => {
+        const photoUrl = photoUrls[index];
+
+        if (!photoUrl) {
+          return "";
+        }
+
+        return `
           <img
-            src="${url}"
+            src="${escapeHtml(photoUrl)}"
+              crossorigin="anonymous"
             class="photo"
-            crossorigin="anonymous"
+            style="
+              left: ${slot.x}px;
+              top: ${slot.y}px;
+              width: ${slot.width}px;
+              height: ${slot.height}px;
+              border-radius: ${slot.borderRadius ?? 0}px;
+            "
           />
-        `,
-      )
+        `;
+      })
+      .join("");
+
+    const getFontSize = (slot: TextSlot, value: string) => {
+      if (slot.type !== "headline") {
+        return slot.fontSize;
+      }
+
+      const length = value.length;
+
+      if (length > 100) {
+        return Math.max(40, slot.fontSize * 0.55);
+      }
+
+      if (length > 70) {
+        return Math.max(45, slot.fontSize * 0.7);
+      }
+
+      if (length > 45) {
+        return Math.max(50, slot.fontSize * 0.85);
+      }
+
+      return slot.fontSize;
+    };
+
+    const textHtml = textSlots
+      .map((slot) => {
+        const value = textValues[slot.type] || "";
+
+        if (!value) {
+          return "";
+        }
+
+        return `
+          <div
+            class="text-slot"
+            style="
+              left: ${slot.x}px;
+              top: ${slot.y}px;
+              width: ${slot.width}px;
+              height: ${slot.height}px;
+              font-size: ${getFontSize(slot, value)}px;
+              font-weight: ${slot.fontWeight};
+              text-align: ${slot.align};
+              color: ${primaryColor};
+            "
+          >
+            ${escapeHtml(value)}
+          </div>
+        `;
+      })
       .join("");
 
     const html = `
       <!DOCTYPE html>
-
-      <html lang="bn">
+      <html>
         <head>
           <meta charset="UTF-8" />
 
@@ -72,216 +173,90 @@ export const renderPoster = async ({
               height: 1600px;
             }
 
-            body {
-              font-family:
-                "Noto Sans Bengali",
-                "Noto Sans",
-                sans-serif;
-
-              background: ${backgroundColor};
-
-              color: ${secondaryColor};
+            @font-face {
+              font-family: "PosterBangla";
+              src: url("${fontUrl}");
+              font-weight: 400;
+            }
+            @font-face {
+              font-family: "PosterBangla";
+              src: url("${fontUrl}");
+              font-weight: 700 900;
             }
 
-            .poster {
+            body {
+              font-family:
+                "PosterBangla",
+                sans-serif;
+             overflow: hidden;
+            }
+.poster {
               position: relative;
-
               width: 1200px;
               height: 1600px;
 
-              overflow: hidden;
-
               background:
                 ${
-                  backgroundStyle ||
-                  `linear-gradient(
-                  135deg,
-                  ${primaryColor},
-                  ${backgroundColor}
-                )`
+                  backgroundStyle
+                    ? `linear-gradient(135deg, ${backgroundColor}, ${secondaryColor})`
+                    : backgroundColor
                 };
 
-              padding: 80px;
+              overflow: hidden;
             }
 
             .decoration {
               position: absolute;
-
-              width: 700px;
-              height: 700px;
-
               border-radius: 50%;
+              pointer-events: none;
+            }
 
+            .decoration-one {
+              width: 500px;
+              height: 500px;
+              right: -180px;
+              top: -150px;
+              background: ${primaryColor};
+              opacity: 0.12;
+            }
+
+            .decoration-two {
+              width: 400px;
+              height: 400px;
+              left: -180px;
+              bottom: -100px;
               background: ${secondaryColor};
-
-              opacity: 0.06;
-
-              right: -300px;
-              top: -250px;
-            }
-
-            .content {
-              position: relative;
-
-              z-index: 2;
-
-              height: 100%;
-
-              display: flex;
-
-              flex-direction: column;
-
-              align-items: center;
-
-              text-align: center;
-            }
-
-            .headline {
-              margin-top: 40px;
-
-              font-size: 72px;
-
-              line-height: 1.25;
-
-              font-weight: 800;
-
-              color: ${secondaryColor};
-
-              max-width: 1000px;
-            }
-
-            .photos {
-              width: 100%;
-
-              margin-top: 70px;
-
-              display: flex;
-
-              justify-content: center;
-
-              gap: 30px;
-
-              flex-wrap: wrap;
+              opacity: 0.18;
             }
 
             .photo {
-              width: 460px;
-              height: 560px;
-
+              position: absolute;
               object-fit: cover;
-
-              border-radius: 28px;
-
-              border: 8px solid ${secondaryColor};
-
-              background: ${primaryColor};
+              display: block;
             }
 
-            .photo:only-child {
-              width: 700px;
-              height: 760px;
-            }
-
-            .person {
-              margin-top: 50px;
-            }
-
-            .name {
-              font-size: 58px;
-
-              font-weight: 800;
-
-              line-height: 1.3;
-            }
-
-            .designation {
-              margin-top: 15px;
-
-              font-size: 36px;
-
-              line-height: 1.4;
-            }
-
-            .organization {
-              margin-top: 10px;
-
-              font-size: 34px;
-
-              line-height: 1.4;
-            }
-
-            .district {
-              margin-top: 10px;
-
-              font-size: 32px;
-
-              line-height: 1.4;
-            }
-
-            .footer {
-              margin-top: auto;
-
-              padding-top: 50px;
-
-              font-size: 28px;
-
-              opacity: 0.85;
-            }
+           .text-slot {
+            position: absolute;
+            display: block;
+            padding: 10px;
+            line-height: 1.35;
+            overflow: visible;
+            word-break: break-word;
+            overflow-wrap: break-word;
+}
           </style>
         </head>
 
         <body>
           <div class="poster">
 
-            <div class="decoration"></div>
+            <div class="decoration decoration-one"></div>
+            <div class="decoration decoration-two"></div>
 
-            <div class="content">
+            ${photoHtml}
 
-              <div class="headline">
-                ${escapeHtml(headline)}
-              </div>
+            ${textHtml}
 
-              <div class="photos">
-                ${photosHtml}
-              </div>
-
-              <div class="person">
-
-                <div class="name">
-                  ${escapeHtml(name)}
-                </div>
-
-                ${
-                  designation
-                    ? `
-                      <div class="designation">
-                        ${escapeHtml(designation)}
-                      </div>
-                    `
-                    : ""
-                }
-
-                ${
-                  organization
-                    ? `
-                      <div class="organization">
-                        ${escapeHtml(organization)}
-                      </div>
-                    `
-                    : ""
-                }
-
-                <div class="district">
-                  ${escapeHtml(district)}
-                </div>
-
-              </div>
-
-              <div class="footer">
-                AI Poster Maker
-              </div>
-
-            </div>
           </div>
         </body>
       </html>
@@ -291,22 +266,32 @@ export const renderPoster = async ({
       waitUntil: "load",
     });
 
-    const image = await page.screenshot({
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+
+      const images = Array.from(document.images);
+
+      await Promise.all(
+        images.map((img) => {
+          if (img.complete) {
+            return Promise.resolve();
+          }
+
+          return new Promise<void>((resolve) => {
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          });
+        }),
+      );
+    });
+
+    const screenshot = await page.screenshot({
       type: "png",
       fullPage: false,
     });
 
-    return Buffer.from(image);
+    return Buffer.from(screenshot);
   } finally {
     await browser.close();
   }
-};
-
-const escapeHtml = (value: string) => {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
 };

@@ -33,8 +33,8 @@ export const generatePoster = async (posterId: string) => {
      */
     const imageBuffer = await renderPoster({
       name: poster.formData.name,
-      designation: poster.formData.designation!,
-      organization: poster.formData.organization!,
+      designation: poster.formData.designation,
+      organization: poster.formData.organization,
       district: poster.formData.district,
       headline: poster.formData.headline,
 
@@ -43,10 +43,11 @@ export const generatePoster = async (posterId: string) => {
       backgroundColor: template.layoutConfig.backgroundColor,
 
       primaryColor: layout.primaryColor,
-
       secondaryColor: layout.secondaryColor,
-
       backgroundStyle: layout.backgroundStyle,
+
+      photoSlots: template.layoutConfig.photoSlots,
+      textSlots: template.layoutConfig.textSlots,
     });
 
     /*

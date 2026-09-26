@@ -60,6 +60,13 @@ export const createPoster = async (req: AuthRequest, res: Response) => {
       });
     }
 
+    if (template.occasionType !== occasion) {
+      return res.status(400).json({
+        success: false,
+        message: "Selected occasion does not match the selected template",
+      });
+    }
+
     const poster = await Poster.create({
       userId,
       templateId,
@@ -110,7 +117,7 @@ export const getPosterById = async (req: AuthRequest, res: Response) => {
     }
 
     const poster = await Poster.findOne({
-      _id: req.params.id,
+      _id: req.params.id as string,
       userId,
     }).populate("templateId");
 
@@ -163,6 +170,74 @@ export const getMyPosters = async (req: AuthRequest, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Failed to fetch poster history",
+    });
+  }
+};
+
+//regenerate controller
+export const regeneratePoster = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    const poster = await Poster.findOne({
+      _id: req.params.id as string,
+      userId,
+    });
+
+    if (!poster) {
+      return res.status(404).json({
+        success: false,
+        message: "Poster not found",
+      });
+    }
+
+    if (poster.regenerationCount >= 3) {
+      return res.status(400).json({
+        success: false,
+        message: "Maximum regeneration limit reached",
+      });
+    }
+
+    if (poster.status === "generating") {
+      return res.status(400).json({
+        success: false,
+        message: "Poster is already being generated",
+      });
+    }
+
+    poster.status = "generating";
+    poster.errorMessage = undefined;
+
+    poster.regenerationCount += 1;
+
+    await poster.save();
+
+    generatePoster(poster._id.toString()).catch((error) => {
+      console.error("Regeneration failed:", error);
+    });
+
+    return res.json({
+      success: true,
+      message: "Poster regeneration started",
+      poster: {
+        id: poster._id,
+        status: poster.status,
+        regenerationCount: poster.regenerationCount,
+      },
+    });
+  } catch (error) {
+    console.error("Regenerate poster error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to regenerate poster",
     });
   }
 };

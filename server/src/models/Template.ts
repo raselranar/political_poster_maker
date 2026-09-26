@@ -1,4 +1,5 @@
 import mongoose, { Schema, type Document } from "mongoose";
+import type { TextSlot } from "../../types/poster.tyes.js";
 
 export type OccasionType = "victory" | "tribute" | "campaign";
 interface PhotoSlot {
@@ -7,16 +8,6 @@ interface PhotoSlot {
   width: number;
   height: number;
   borderRadius?: number;
-}
-interface TextSlot {
-  type: "headline" | "name" | "designation" | "organization" | "footer";
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  fontSize: number;
-  fontWeight?: string;
-  align?: "left" | "center" | "right";
 }
 
 interface LayoutConfig {
