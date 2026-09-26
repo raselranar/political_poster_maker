@@ -1,6 +1,11 @@
 import TemplateCard from "@/components/templates/TemplateCard";
 import { getTemplates } from "@/lib/api";
 
+export const metadata = {
+  title: "Templates",
+  description: "Browse poster templates and choose a design to get started.",
+};
+
 const TemplatesPage = async () => {
   const data = await getTemplates();
   return (

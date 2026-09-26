@@ -31,7 +31,12 @@ import {
 } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-import { createPoster, uploadPhotos, getPoster } from "@/lib/api";
+import {
+  createPoster,
+  uploadPhotos,
+  getPoster,
+  getTemplateById,
+} from "@/lib/api";
 import Image from "next/image";
 import { toast } from "@/components/ui/toast";
 
@@ -56,6 +61,7 @@ export default function CreatePage() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
+  const [template, setTemplate] = useState<any>(null);
   const router = useRouter();
 
   const form = useForm({
@@ -175,6 +181,24 @@ export default function CreatePage() {
     };
   }, [previews]);
 
+  useEffect(() => {
+    if (!templateId) return;
+
+    const loadTemplate = async () => {
+      try {
+        const result = await getTemplateById(templateId);
+
+        setTemplate(result.template);
+
+        form.setValue("occasion", result.template.occasionType);
+      } catch (error) {
+        console.error("Failed to load template:", error);
+      }
+    };
+
+    loadTemplate();
+  }, [templateId, form]);
+
   return (
     <main className="p-6 ">
       <Card className="border max-w-xl mx-auto shadow-sm">
@@ -288,7 +312,8 @@ export default function CreatePage() {
                     <Select
                       name={field.name}
                       value={field.value}
-                      onValueChange={field.onChange}>
+                      onValueChange={field.onChange}
+                      disabled={!!template}>
                       <SelectTrigger
                         id="poster-occasion"
                         aria-invalid={fieldState.invalid}
@@ -296,11 +321,9 @@ export default function CreatePage() {
                         <SelectValue placeholder="Select occasion" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="victory">বিজয় দিবস</SelectItem>
-                        <SelectItem value="tribute">শোক / স্মরণ</SelectItem>
-                        <SelectItem value="campaign">
-                          নির্বাচনী প্রচার
-                        </SelectItem>
+                        <SelectItem value="victory">Victory</SelectItem>
+                        <SelectItem value="tribute">Tribute</SelectItem>
+                        <SelectItem value="campaign">Campaign</SelectItem>
                       </SelectContent>
                     </Select>
                     {fieldState.invalid && (

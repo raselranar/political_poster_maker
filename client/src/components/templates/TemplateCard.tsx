@@ -26,9 +26,10 @@ export default function TemplateCard({ template }: TemplateCardProps) {
       <Image
         width={300}
         height={300}
+        unoptimized
         src={template.thumbnailUrl}
         alt={template.title}
-        className="relative z-20 aspect-video w-full object-cover brightness-60 grayscale dark:brightness-40"
+        className="relative z-20 aspect-video w-full object-cover"
       />
       <CardHeader>
         <CardTitle>{template.title}</CardTitle>

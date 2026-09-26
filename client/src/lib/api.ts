@@ -74,3 +74,19 @@ export async function getMyPosters(token: string) {
     cache: "no-store",
   });
 }
+
+//  regenerate api
+export async function regeneratePoster(posterId: string, token: string) {
+  return apiRequest(`/api/posters/${posterId}/regenerate`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
+// get Template by id api
+export async function getTemplateById(templateId: string) {
+  return apiRequest(`/api/templates/${templateId}`, {
+    cache: "no-store",
+  });
+}
