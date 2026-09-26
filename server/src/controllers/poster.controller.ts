@@ -134,3 +134,35 @@ export const getPosterById = async (req: AuthRequest, res: Response) => {
     });
   }
 };
+
+// history api
+export const getMyPosters = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    const posters = await Poster.find({
+      userId,
+    })
+      .populate("templateId")
+      .sort({ createdAt: -1 });
+
+    return res.json({
+      success: true,
+      posters,
+    });
+  } catch (error) {
+    console.error("Get poster history error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch poster history",
+    });
+  }
+};
