@@ -65,6 +65,15 @@ export async function getPoster(posterId: string, token: string) {
     cache: "no-store",
   });
 }
+
+export async function deletePoster(posterId: string, token: string) {
+  return apiRequest(`/api/posters/${posterId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+}
 // poster history api
 export async function getMyPosters(token: string) {
   return apiRequest("/api/posters", {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 
 export const metadata: Metadata = {
   title: "Create a Poster",
@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 export default function CreateLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
-  return children;
+  return <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>;
 }

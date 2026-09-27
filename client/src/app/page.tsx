@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Download, ImagePlus, LayoutTemplate } from "lucide-react";
 
 import TemplateCard from "@/components/templates/TemplateCard";
+import AuthActions from "@/components/navigation/AuthActions";
 import { buttonVariants } from "@/components/ui/button";
 import { getTemplates } from "@/lib/api";
 import { cn } from "@/lib/utils";
@@ -38,7 +39,7 @@ export default async function Home() {
             </span>
             <span>Poster Maker</span>
           </Link>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-2 sm:gap-5">
             <Link
               href="/templates"
               className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline">
@@ -49,7 +50,13 @@ export default async function Home() {
               className="hidden text-sm text-muted-foreground transition-colors hover:text-foreground sm:inline">
               My posters
             </Link>
-            <Link href="/templates" className={buttonVariants({ size: "lg" })}>
+            <AuthActions />
+            <Link
+              href="/templates"
+              className={cn(
+                buttonVariants({ size: "lg" }),
+                "hidden sm:inline-flex",
+              )}>
               Create poster
               <ArrowRight data-icon="inline-end" />
             </Link>

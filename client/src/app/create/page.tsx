@@ -138,7 +138,9 @@ export default function CreatePage() {
 
       // Upload photos to Cloudinary
       const uploadResult = await uploadPhotos(files, token);
-      const photoUrls = uploadResult.images.map((image) => image.secure_url);
+      const photoUrls = uploadResult.images.map(
+        (image: { secure_url: string }) => image.secure_url,
+      );
 
       // Create poster
       setStatus("Starting poster generation...");

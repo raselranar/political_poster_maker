@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { getMyPosters } from "@/lib/api";
+import { deletePoster, getMyPosters } from "@/lib/api";
 import BackLink from "@/components/navigation/BackLink";
 import type { Poster } from "@/types/poster";
-import { Download, Eye } from "lucide-react";
+import { Download, Eye, Trash2 } from "lucide-react";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 const getCloudinaryDownloadUrl = (url: string, customName = "poster") => {
   if (!url) return "";
@@ -27,6 +28,8 @@ export default function HistoryPage() {
   const [posters, setPosters] = useState<Poster[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [deletingPosterId, setDeletingPosterId] = useState<string | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
@@ -71,6 +74,34 @@ export default function HistoryPage() {
     loadHistory();
   }, [authChecked, router]);
 
+  const handleDelete = async (poster: Poster) => {
+    if (!window.confirm(`Delete the poster for ${poster.formData.name}?`)) {
+      return;
+    }
+
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
+
+    try {
+      setDeletingPosterId(poster._id);
+      setDeleteError("");
+      await deletePoster(poster._id, token);
+      setPosters((current) =>
+        current.filter((item) => item._id !== poster._id),
+      );
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error ? error.message : "Failed to delete poster",
+      );
+    } finally {
+      setDeletingPosterId(null);
+    }
+  };
+
   if (!authChecked) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background">
@@ -104,6 +135,12 @@ export default function HistoryPage() {
           View your previously generated posters.
         </p>
       </div>
+
+      {deleteError && (
+        <p role="alert" className="mb-6 text-sm text-red-600">
+          {deleteError}
+        </p>
+      )}
 
       {posters.length === 0 ? (
         <div className="rounded-lg border p-10 text-center">
@@ -184,6 +221,22 @@ export default function HistoryPage() {
                         Download
                       </Link>
                     )}
+                  <Button
+                    onClick={() => handleDelete(poster)}
+                    disabled={
+                      poster.status === "generating" ||
+                      deletingPosterId !== null
+                    }
+                    aria-label={`Delete poster for ${poster.formData.name}`}
+                    title={
+                      poster.status === "generating"
+                        ? "Cannot delete while generating"
+                        : "Delete poster"
+                    }
+                    variant={"destructive"}
+                    className="disabled:cursor-not-allowed disabled:opacity-40">
+                    <Trash2 className="size-4" />
+                  </Button>
                 </div>
               </div>
             </div>
