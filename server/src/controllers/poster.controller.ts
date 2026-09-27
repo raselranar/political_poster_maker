@@ -28,10 +28,10 @@ export const createPoster = async (req: AuthRequest, res: Response) => {
 
     if (
       !templateId ||
-      !name ||
-      !district ||
+      !name?.trim() ||
+      !district?.trim() ||
       !occasion ||
-      !headline ||
+      !headline?.trim() ||
       !Array.isArray(photoUrls)
     ) {
       return res.status(400).json({
@@ -71,12 +71,12 @@ export const createPoster = async (req: AuthRequest, res: Response) => {
       userId,
       templateId,
       formData: {
-        name,
-        designation,
-        organization,
-        district,
+        name: name.trim(),
+        designation: designation?.trim(),
+        organization: organization?.trim(),
+        district: district.trim(),
         occasion,
-        headline,
+        headline: headline.trim(),
       },
       photoUrls,
       status: "generating",

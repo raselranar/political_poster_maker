@@ -1,6 +1,10 @@
 import fs from "fs";
 import { renderPoster } from "./services/poster-renderer.service.js";
 
+const testPhotoUrl = `data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="600" height="650" viewBox="0 0 600 650"><rect width="600" height="650" fill="#dce8df"/><circle cx="300" cy="190" r="100" fill="#e3a77b"/><path d="M120 650c15-180 110-270 180-270s165 90 180 270" fill="#24634d"/></svg>',
+)}`;
+
 const test = async () => {
   try {
     const image = await renderPoster({
@@ -9,7 +13,7 @@ const test = async () => {
       organization: "স্থানীয় উন্নয়ন পরিষদ, ঢাকা জেলা",
       district: "ঢাকা",
       headline: "জনগণের সেবায় নিবেদিত একজন বিশ্বস্ত প্রতিনিধি",
-      photoUrls: [],
+      photoUrls: [testPhotoUrl],
       backgroundColor: "#006A4E",
       primaryColor: "#006A4E",
       secondaryColor: "#FFFFFF",

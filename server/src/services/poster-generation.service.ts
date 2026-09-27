@@ -23,11 +23,12 @@ export const generatePoster = async (posterId: string) => {
 
     // 1. Ask Groq for visual layout instructions.
     // Groq should control layout only, not colors.
+    const posterSeed = Number.parseInt(poster._id.toString().slice(-4), 16);
     const layout = await generatePosterLayout(
       poster.formData.occasion,
       template.title,
       poster.photoUrls.length,
-      poster.regenerationCount || 0,
+      (poster.regenerationCount || 0) + posterSeed,
       poster.aiLayout as PosterLayout | undefined,
     );
 
@@ -43,7 +44,7 @@ export const generatePoster = async (posterId: string) => {
       backgroundColor: template.layoutConfig.backgroundColor || "#FFFFFF",
       primaryColor: template.layoutConfig.primaryColor || "#111827",
       secondaryColor: template.layoutConfig.secondaryColor || "#FFFFFF",
-      // backgroundStyle: layout.backgroundStyle ?? "simple",
+      layout,
       photoSlots: template.layoutConfig.photoSlots,
       textSlots: template.layoutConfig.textSlots,
     });

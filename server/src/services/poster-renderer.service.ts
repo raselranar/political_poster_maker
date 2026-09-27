@@ -3,6 +3,7 @@ import { pathToFileURL } from "node:url";
 
 import puppeteer from "puppeteer";
 import type { TextSlot } from "../../types/poster.tyes.js";
+import type { PosterLayout } from "../validators/poster-layout.validator.js";
 
 interface PhotoSlot {
   x: number;
@@ -24,6 +25,7 @@ interface RenderPosterOptions {
   primaryColor: string;
   secondaryColor: string;
   backgroundStyle?: string;
+  layout?: PosterLayout;
 
   photoSlots: PhotoSlot[];
   textSlots: TextSlot[];
@@ -116,6 +118,7 @@ export const renderPoster = async ({
   primaryColor,
   secondaryColor,
   backgroundStyle,
+  layout,
   photoSlots,
   textSlots,
 }: RenderPosterOptions): Promise<Buffer> => {
@@ -126,6 +129,8 @@ export const renderPoster = async ({
       "--single-process",
       "--no-zygote",
     ],
+    executablePath: "/usr/bin/google-chrome",
+    // headless: false,
   });
 
   try {
@@ -137,16 +142,136 @@ export const renderPoster = async ({
       deviceScaleFactor: 1,
     });
 
+    const headlineText = headline?.trim() || "Your message matters";
     const textValues: Record<string, string> = {
-      headline,
-      name,
-      designation: designation || "",
-      organization: organization || "",
-      footer: district,
+      headline: headlineText,
+      name: name.trim(),
+      designation: designation?.trim() || "",
+      organization: organization?.trim() || "",
+      footer: district.trim(),
     };
     const textColor = getReadableTextColor(backgroundColor, primaryColor);
 
-    const photoHtml = photoSlots
+    const headlineSlot: TextSlot = textSlots.find(
+      (slot) => slot.type === "headline",
+    ) ?? {
+      type: "headline",
+      x: 80,
+      y: 70,
+      width: 1040,
+      height: 180,
+      fontSize: 58,
+      fontWeight: 700,
+      align: "center",
+    };
+    const footerSlot: TextSlot = textSlots.find(
+      (slot) => slot.type === "footer",
+    ) ?? {
+      type: "footer",
+      x: 80,
+      y: 1470,
+      width: 1040,
+      height: 70,
+      fontSize: 26,
+      fontWeight: 500,
+      align: "center",
+    };
+    const effectiveTextSlots: TextSlot[] = [
+      headlineSlot,
+      ...textSlots.filter(
+        (slot) => slot.type !== "headline" && slot.type !== "footer",
+      ),
+      footerSlot,
+    ].map((slot) => {
+      if (slot.type === "footer" && layout) {
+        return {
+          ...slot,
+          align:
+            layout.footerStyle === "simple"
+              ? "left"
+              : layout.footerStyle === "centered"
+                ? "center"
+                : "right",
+        };
+      }
+
+      if (slot.type !== "headline" || !layout) {
+        return slot;
+      }
+
+      const position = layout.headlinePosition;
+      const align: TextSlot["align"] =
+        position === "top-center"
+          ? "center"
+          : position === "top-left"
+            ? "left"
+            : "right";
+      const width = Math.min(slot.width, 1040);
+
+      return {
+        ...slot,
+        x:
+          position === "top-left"
+            ? 80
+            : position === "top-right"
+              ? 1200 - width - 80
+              : 80,
+        y: slot.width >= 700 ? 70 : slot.y,
+        width,
+        align,
+      };
+    });
+
+    const effectivePhotoSlots = (() => {
+      if (photoUrls.length <= 1) {
+        const source = photoSlots[0];
+        const headlineSlot = textSlots.find((slot) => slot.type === "headline");
+
+        if (!source) return [];
+
+        const isFullWidthTextLayout = (headlineSlot?.width ?? 0) >= 700;
+
+        return [
+          isFullWidthTextLayout
+            ? {
+                ...source,
+                x: Math.round((1200 - source.width) / 2),
+                y: 300,
+              }
+            : source,
+        ];
+      }
+      if (photoSlots.length >= photoUrls.length) {
+        return photoSlots.slice(0, photoUrls.length);
+      }
+
+      const source = photoSlots[0];
+      if (!source) return [];
+
+      const gap = 20;
+      const columns = photoUrls.length;
+      const width = (source.width - gap * (columns - 1)) / columns;
+
+      return photoUrls.map((_, index) => ({
+        ...source,
+        x: source.x + index * (width + gap),
+        width,
+        borderRadius: Math.min(source.borderRadius ?? 0, 24),
+      }));
+    })();
+
+    const decorationName = layout?.decoration.join(" ").toLowerCase() ?? "";
+    const decorationClass = decorationName.includes("diagonal")
+      ? "decoration-diagonal"
+      : decorationName.includes("grid")
+        ? "decoration-grid"
+        : decorationName.includes("frame")
+          ? "decoration-frame"
+          : decorationName.includes("corner")
+            ? "decoration-corner"
+            : "decoration-circles";
+
+    const photoHtml = effectivePhotoSlots
       .map((slot, index) => {
         const photoUrl = photoUrls[index];
 
@@ -222,7 +347,33 @@ export const renderPoster = async ({
         : slot.y;
     };
 
-    const textHtml = textSlots
+    const effectiveHeadlineSlot =
+      effectiveTextSlots.find((slot) => slot.type === "headline") ??
+      headlineSlot;
+    const headlineHtml = `
+      <div
+        id="poster-headline"
+        class="text-slot"
+        data-text-type="headline"
+        style="
+          left: ${effectiveHeadlineSlot.x}px;
+          top: ${effectiveHeadlineSlot.y}px;
+          width: ${effectiveHeadlineSlot.width}px;
+          height: ${effectiveHeadlineSlot.height}px;
+          font-size: ${getFontSize(effectiveHeadlineSlot, headlineText)}px;
+          --min-font-size: ${fontScale.headline.min}px;
+          font-weight: ${effectiveHeadlineSlot.fontWeight ?? 700};
+          text-align: ${effectiveHeadlineSlot.align ?? "center"};
+          color: ${textColor};
+          z-index: 10;
+        "
+      >
+        <span class="text-content">${escapeHtml(headlineText)}</span>
+      </div>
+    `;
+
+    const textHtml = effectiveTextSlots
+      .filter((slot) => slot.type !== "headline")
       .map((slot) => {
         const value = textValues[slot.type] || "";
 
@@ -233,6 +384,7 @@ export const renderPoster = async ({
         return `
           <div
             class="text-slot"
+            data-text-type="${slot.type}"
             style="
               left: ${slot.x}px;
               top: ${getSlotTop(slot)}px;
@@ -243,6 +395,7 @@ export const renderPoster = async ({
               font-weight: ${slot.fontWeight ?? 500};
               text-align: ${slot.align};
               color: ${textColor};
+              z-index: ${slot.type === "headline" ? 10 : 2};
             "
           >
             <span class="text-content">${escapeHtml(value)}</span>
@@ -292,12 +445,11 @@ export const renderPoster = async ({
               width: 1200px;
               height: 1600px;
 
-              background:
-                ${
-                  backgroundStyle
-                    ? `linear-gradient(135deg, ${backgroundColor}, ${secondaryColor})`
-                    : backgroundColor
-                };
+              background: ${
+                backgroundStyle || layout
+                  ? `linear-gradient(135deg, ${backgroundColor}, ${secondaryColor})`
+                  : backgroundColor
+              };
 
               overflow: hidden;
             }
@@ -326,14 +478,50 @@ export const renderPoster = async ({
               opacity: 0.18;
             }
 
+            .decoration-diagonal::after {
+              content: "";
+              position: absolute;
+              inset: 0;
+              background: ${secondaryColor};
+              opacity: 0.24;
+              clip-path: polygon(0 70%, 100% 15%, 100% 35%, 0 90%);
+            }
+
+            .decoration-grid {
+              width: 100%;
+              height: 100%;
+              opacity: 0.12;
+              background-image: linear-gradient(${primaryColor} 2px, transparent 2px), linear-gradient(90deg, ${primaryColor} 2px, transparent 2px);
+              background-size: 80px 80px;
+            }
+
+            .decoration-frame {
+              inset: 28px;
+              border: 18px solid ${primaryColor};
+              border-radius: 0;
+              opacity: 0.14;
+            }
+
+            .decoration-corner {
+              width: 620px;
+              height: 620px;
+              right: -280px;
+              top: -280px;
+              border-radius: 0 0 0 100%;
+              background: ${primaryColor};
+              opacity: 0.16;
+            }
+
             .photo {
               position: absolute;
               object-fit: cover;
               display: block;
+              z-index: 1;
             }
 
             .text-slot {
               position: absolute;
+              z-index: 2;
               display: flex;
               align-items: center;
               padding: 10px 14px;
@@ -352,10 +540,12 @@ export const renderPoster = async ({
         <body>
           <div class="poster">
 
-            <div class="decoration decoration-one"></div>
+            <div class="decoration ${decorationClass} decoration-one"></div>
             <div class="decoration decoration-two"></div>
 
             ${photoHtml}
+
+            ${headlineHtml}
 
             ${textHtml}
 
@@ -388,6 +578,11 @@ export const renderPoster = async ({
             element.style.fontSize = `${fontSize}px`;
           }
         });
+
+      const headline = document.querySelector<HTMLElement>("#poster-headline");
+      if (!headline || !headline.textContent?.trim()) {
+        throw new Error("Poster headline was not rendered");
+      }
 
       const images = Array.from(document.images);
 

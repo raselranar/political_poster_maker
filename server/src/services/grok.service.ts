@@ -50,74 +50,35 @@ export const generatePosterLayout = async (
     },
   ];
 
-  const prompt = `
-You are a professional poster layout assistant.
+  const prompt = `You control only four visual choices for a poster. You do not write poster text.
 
-Your job is ONLY to suggest visual layout properties.
+Input:
+- occasion: ${occasion}
+- template: ${templateTitle}
+- photo count: ${photoCount}
+- variation number: ${regenerationSeed}
+- previous layout: ${previousLayout ? JSON.stringify(previousLayout) : "none"}
 
-Do NOT generate, rewrite, translate, modify, correct, or invent any user text.
+Return exactly one JSON object and nothing else. Use double quotes. No markdown. No comments.
 
-The exact user-provided text will be rendered separately by the application.
+Required shape:
+{"photoArrangement":"single","decoration":["soft circular accent"],"headlinePosition":"top-center","footerStyle":"simple"}
 
-Poster occasion:
-${occasion}
+Allowed values:
+- photoArrangement: single for 1 photo, two-column for 2 photos, three-column for 3 photos
+- headlinePosition: top-center, top-left, or top-right
+- footerStyle: simple, centered, or divided
+- decoration: exactly one short visual phrase, with no words that should appear on the poster
 
-Template:
-${templateTitle}
+Decision rules:
+1. Keep photoArrangement exactly matched to the photo count.
+2. Keep the headline at the top with clear whitespace. Never hide, remove, or replace it.
+3. Use a different headlinePosition, footerStyle, or decoration from the previous layout when possible.
+4. For victory use confident geometry; for tribute use restrained framing; for campaign use strong directional composition.
+5. Do not invent names, slogans, locations, organizations, or any user-facing text.
 
-Number of photos:
-${photoCount}
-
-This is regeneration variant seed: ${regenerationSeed}
-Previous layout: ${previousLayout ? JSON.stringify(previousLayout) : "none"}
-
-Return ONLY valid JSON.
-Do not return markdown.
-Do not add explanations.
-
-Use exactly this structure:
-
-{
-  "photoArrangement": "single",
-  "decoration": [],
-  "headlinePosition": "top-center",
-  "footerStyle": "simple"
-}
-
-Rules:
-
-- photoArrangement must be one of:
-  single, two-column, three-column
-
-- Choose photoArrangement according to the number of photos.
-
-- decoration must be an array of short visual descriptions.
-
-- Keep decorations minimal and professional.
-
-- Decorations must never contain text.
-
-- Decorations must not cover or interfere with user text.
-
-- headlinePosition must be one of:
-  top-center, top-left, top-right
-
-- footerStyle must be one of:
-  simple, centered, divided
-
-- Maintain strong visual hierarchy:
-  headline > name > designation > organization
-
-- Keep sufficient whitespace around text.
-
-- Do not include political slogans or political messaging.
-
-- Do not invent names, organizations, locations, slogans, or any other text.
-
-- If this is a regeneration, make the layout visibly different from the previous layout whenever possible. Use a different photo arrangement, headline position, or footer style from the previous version.
-
-Return ONLY the JSON object.
-`;
+Example valid response:
+{"photoArrangement":"two-column","decoration":["subtle side frame"],"headlinePosition":"top-left","footerStyle":"centered"}`;
   const response = await generateText({
     model: groq("openai/gpt-oss-20b"),
     prompt: prompt,
@@ -137,7 +98,22 @@ Return ONLY the JSON object.
 
   const parsed = JSON.parse(cleanedText);
 
-  const validatedLayout = posterLayoutSchema.parse(parsed);
+  const variation =
+    layoutVariants[regenerationSeed % layoutVariants.length] ??
+    layoutVariants[0]!;
+  const photoArrangement =
+    photoCount === 1
+      ? "single"
+      : photoCount === 2
+        ? "two-column"
+        : "three-column";
+  const validatedLayout = posterLayoutSchema.parse({
+    ...parsed,
+    photoArrangement,
+    decoration: variation.decoration,
+    headlinePosition: variation.headlinePosition,
+    footerStyle: variation.footerStyle,
+  });
 
   if (
     previousLayout &&
