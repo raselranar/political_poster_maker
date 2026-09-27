@@ -206,20 +206,14 @@ export const renderPoster = async ({
           : position === "top-left"
             ? "left"
             : "right"
-        : slot.align;
-      const width = Math.min(slot.width, 1040);
+        : slot.align ?? "center";
 
       return {
         ...slot,
-        x: position
-          ? position === "top-left"
-            ? 80
-            : position === "top-right"
-              ? 1200 - width - 80
-              : 80
-          : slot.x,
-        y: slot.width >= 700 ? 70 : slot.y,
-        width,
+        x: 80,
+        y: 70,
+        width: 1040,
+        height: Math.max(slot.height, 180),
         align,
       };
     });

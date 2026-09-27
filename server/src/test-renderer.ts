@@ -29,13 +29,13 @@ const test = async () => {
       textSlots: [
         {
           type: "headline",
-          x: 80,
-          y: 80,
-          width: 1040,
-          height: 180,
+          x: 680,
+          y: 620,
+          width: 450,
+          height: 240,
           fontSize: 70,
           fontWeight: 700,
-          align: "center",
+          align: "left",
         },
         {
           type: "name",
