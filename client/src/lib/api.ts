@@ -90,3 +90,29 @@ export async function getTemplateById(templateId: string) {
     cache: "no-store",
   });
 }
+
+// login
+export async function login(data: { email: string; password: string }) {
+  return apiRequest("/api/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+// register
+export async function register(data: {
+  name: string;
+  email: string;
+  password: string;
+}) {
+  return apiRequest("/api/auth/register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(data),
+  });
+}

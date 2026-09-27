@@ -40,6 +40,7 @@ import {
 } from "@/lib/api";
 import Image from "next/image";
 import { toast } from "@/components/ui/toast";
+import { Template } from "@/types/template";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -62,7 +63,7 @@ export default function CreatePage() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
-  const [template, setTemplate] = useState<any>(null);
+  const [template, setTemplate] = useState<Template | null>(null);
   const router = useRouter();
 
   const form = useForm({
