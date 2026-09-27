@@ -120,11 +120,17 @@ export const renderPoster = async ({
   textSlots,
 }: RenderPosterOptions): Promise<Buffer> => {
   const browser = await puppeteer.launch({
-    ...(process.env.PUPPETEER_EXECUTABLE_PATH
-      ? { executablePath: process.env.PUPPETEER_EXECUTABLE_PATH }
-      : {}),
-    headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    // executablePath: "/usr/bin/google-chrome",
+    args: [
+      "--disable-setuid-sandbox",
+      "--no-sandbox",
+      "--single-process",
+      "--no-zygote",
+    ],
+    executablePath:
+      process.env.NODE_ENV === "production"
+        ? process.env.PUPPETEER_EXECUTABLE_PATH
+        : await puppeteer.executablePath(),
   });
 
   try {

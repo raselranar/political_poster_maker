@@ -7,8 +7,7 @@
     "dev": "tsx watch src/server.ts",
     "seed:templates": "tsx src/seeds/templates.ts",
     "build": "tsc",
-    "start": "node dist/src/server.js",
-    "postinstall": "puppeteer browsers install chrome"
+    "start": "node dist/src/server.js"
   },
   "keywords": [],
   "type": "module",
