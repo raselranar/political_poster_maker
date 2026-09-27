@@ -2,6 +2,7 @@ import { Router } from "express";
 import { authenticate } from "../middleware/auth.js";
 import {
   createPoster,
+  deletePoster,
   getMyPosters,
   getPosterById,
   regeneratePoster,
@@ -15,6 +16,8 @@ posterRoutes.post("/", authenticate, posterGenerationLimiter, createPoster);
 posterRoutes.get("/", authenticate, getMyPosters);
 // get poster by id
 posterRoutes.get("/:id", authenticate, getPosterById);
+// delete poster
+posterRoutes.delete("/:id", authenticate, deletePoster);
 // Again Generate poster
 posterRoutes.post(
   "/:id/regenerate",

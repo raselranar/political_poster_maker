@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "seed:templates": "tsx src/seeds/templates.ts"
+    "seed:templates": "tsx src/seeds/templates.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
   },
   "keywords": [],
   "type": "module",

@@ -142,6 +142,56 @@ export const getPosterById = async (req: AuthRequest, res: Response) => {
   }
 };
 
+export const deletePoster = async (req: AuthRequest, res: Response) => {
+  try {
+    const userId = req.user?.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    const poster = await Poster.findOneAndDelete({
+      _id: req.params.id as string,
+      userId,
+      status: { $ne: "generating" },
+    });
+
+    if (!poster) {
+      const existingPoster = await Poster.findOne({
+        _id: req.params.id as string,
+        userId,
+      });
+
+      if (existingPoster?.status === "generating") {
+        return res.status(409).json({
+          success: false,
+          message: "Cannot delete a poster while it is generating",
+        });
+      }
+
+      return res.status(404).json({
+        success: false,
+        message: "Poster not found",
+      });
+    }
+
+    return res.json({
+      success: true,
+      message: "Poster deleted",
+    });
+  } catch (error) {
+    console.error("Delete poster error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete poster",
+    });
+  }
+};
+
 // history api
 export const getMyPosters = async (req: AuthRequest, res: Response) => {
   try {
