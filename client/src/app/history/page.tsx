@@ -10,6 +10,16 @@ import type { Poster } from "@/types/poster";
 import { Download, Eye, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const getCloudinaryDownloadUrl = (url: string, customName = "poster") => {
   if (!url) return "";
@@ -30,6 +40,7 @@ export default function HistoryPage() {
   const [error, setError] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [deletingPosterId, setDeletingPosterId] = useState<string | null>(null);
+  const [posterToDelete, setPosterToDelete] = useState<Poster | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
@@ -74,11 +85,15 @@ export default function HistoryPage() {
     loadHistory();
   }, [authChecked, router]);
 
-  const handleDelete = async (poster: Poster) => {
-    if (!window.confirm(`Delete the poster for ${poster.formData.name}?`)) {
-      return;
-    }
+  const handleDelete = (poster: Poster) => {
+    setPosterToDelete(poster);
+  };
 
+  const confirmDelete = async () => {
+    if (!posterToDelete) return;
+
+    const poster = posterToDelete;
+    setPosterToDelete(null);
     const token = localStorage.getItem("token");
 
     if (!token) {
@@ -243,6 +258,32 @@ export default function HistoryPage() {
           ))}
         </div>
       )}
+
+      <AlertDialog
+        open={posterToDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setPosterToDelete(null);
+        }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete the poster for {posterToDelete?.formData.name}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={deletingPosterId !== null}>
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }
