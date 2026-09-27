@@ -45,3 +45,5 @@ Thumbs.db
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+client/next-env.d.ts
+client/next-env.d.ts
