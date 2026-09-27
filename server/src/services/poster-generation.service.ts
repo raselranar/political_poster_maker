@@ -1,5 +1,6 @@
 import { Poster } from "../models/Poster.js";
 import { Template } from "../models/Template.js";
+import type { PosterLayout } from "../validators/poster-layout.validator.js";
 import { uploadBufferToCloudinary } from "./cloudinary.service.js";
 import { generatePosterLayout } from "./grok.service.js";
 import { renderPoster } from "./poster-renderer.service.js";
@@ -26,6 +27,8 @@ export const generatePoster = async (posterId: string) => {
       poster.formData.occasion,
       template.title,
       poster.photoUrls.length,
+      poster.regenerationCount || 0,
+      poster.aiLayout as PosterLayout | undefined,
     );
 
     // 2. Render exact user content using Puppeteer.

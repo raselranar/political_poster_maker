@@ -14,7 +14,42 @@ export const generatePosterLayout = async (
   occasion: string,
   templateTitle: string,
   photoCount: number,
+  regenerationSeed = 0,
+  previousLayout?: PosterLayout,
 ): Promise<PosterLayout> => {
+  const layoutVariants: PosterLayout[] = [
+    {
+      photoArrangement: "single",
+      decoration: ["soft circular accent"],
+      headlinePosition: "top-center",
+      footerStyle: "simple",
+    },
+    {
+      photoArrangement: "two-column",
+      decoration: ["subtle side frame"],
+      headlinePosition: "top-right",
+      footerStyle: "centered",
+    },
+    {
+      photoArrangement: "three-column",
+      decoration: ["minimal grid accent"],
+      headlinePosition: "top-left",
+      footerStyle: "divided",
+    },
+    {
+      photoArrangement: "single",
+      decoration: ["soft diagonal highlight"],
+      headlinePosition: "top-left",
+      footerStyle: "centered",
+    },
+    {
+      photoArrangement: "two-column",
+      decoration: ["soft corner glow"],
+      headlinePosition: "top-center",
+      footerStyle: "divided",
+    },
+  ];
+
   const prompt = `
 You are a professional poster layout assistant.
 
@@ -32,6 +67,9 @@ ${templateTitle}
 
 Number of photos:
 ${photoCount}
+
+This is regeneration variant seed: ${regenerationSeed}
+Previous layout: ${previousLayout ? JSON.stringify(previousLayout) : "none"}
 
 Return ONLY valid JSON.
 Do not return markdown.
@@ -76,6 +114,8 @@ Rules:
 
 - Do not invent names, organizations, locations, slogans, or any other text.
 
+- If this is a regeneration, make the layout visibly different from the previous layout whenever possible. Use a different photo arrangement, headline position, or footer style from the previous version.
+
 Return ONLY the JSON object.
 `;
   const response = await generateText({
@@ -89,7 +129,6 @@ Return ONLY the JSON object.
     throw new Error("Groq returned an empty response");
   }
 
-  // Remove accidental markdown code fences.
   const cleanedText = text
     .replace(/^```json\s*/i, "")
     .replace(/^```\s*/i, "")
@@ -99,6 +138,20 @@ Return ONLY the JSON object.
   const parsed = JSON.parse(cleanedText);
 
   const validatedLayout = posterLayoutSchema.parse(parsed);
+
+  if (
+    previousLayout &&
+    JSON.stringify(validatedLayout) === JSON.stringify(previousLayout)
+  ) {
+    const candidate =
+      layoutVariants[(regenerationSeed + 1) % layoutVariants.length] ??
+      layoutVariants[0]!;
+
+    return {
+      ...candidate,
+      decoration: candidate.decoration,
+    };
+  }
 
   return validatedLayout;
 };
