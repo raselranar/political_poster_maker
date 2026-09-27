@@ -3,6 +3,7 @@ import {
   getTemplateById,
   getTemplates,
 } from "../controllers/template.controller.js";
+import { authenticate } from "../middleware/auth.js";
 
 const templateRoutes = Router();
 
