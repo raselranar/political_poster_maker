@@ -64,7 +64,23 @@ export default function CreatePage() {
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [template, setTemplate] = useState<Template | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
+      setAuthChecked(true);
+    };
+
+    checkAuth();
+  }, [router]);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -200,6 +216,14 @@ export default function CreatePage() {
 
     loadTemplate();
   }, [templateId, form]);
+
+  if (!authChecked) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-muted-foreground">Checking authentication...</p>
+      </main>
+    );
+  }
 
   return (
     <main className="p-6 ">

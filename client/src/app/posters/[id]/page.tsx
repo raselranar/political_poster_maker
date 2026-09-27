@@ -32,12 +32,29 @@ export default function PosterPreviewPage() {
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
   const [error, setError] = useState("");
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
+      setAuthChecked(true);
+    };
+
+    checkAuth();
+  }, [router]);
 
   const loadPoster = useCallback(async () => {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      router.push("/login");
+      router.replace("/login");
+      setLoading(false);
       return;
     }
 
@@ -56,8 +73,14 @@ export default function PosterPreviewPage() {
   }, [posterId, router]);
 
   useEffect(() => {
-    loadPoster();
-  }, [loadPoster]);
+    if (!authChecked) return;
+
+    const load = async () => {
+      await loadPoster();
+    };
+
+    load();
+  }, [authChecked, loadPoster]);
 
   /*
    * Poll while poster is being generated.
@@ -78,7 +101,7 @@ export default function PosterPreviewPage() {
     const token = localStorage.getItem("token");
 
     if (!token) {
-      router.push("/login");
+      router.replace("/login");
       return;
     }
 
@@ -116,6 +139,14 @@ export default function PosterPreviewPage() {
       setRegenerating(false);
     }
   };
+
+  if (!authChecked) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-muted-foreground">Checking authentication...</p>
+      </main>
+    );
+  }
 
   if (loading) {
     return (

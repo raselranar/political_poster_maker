@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { getMyPosters } from "@/lib/api";
 import BackLink from "@/components/navigation/BackLink";
@@ -22,17 +23,36 @@ const getCloudinaryDownloadUrl = (url: string, customName = "poster") => {
 };
 
 export default function HistoryPage() {
+  const router = useRouter();
   const [posters, setPosters] = useState<Poster[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        router.replace("/login");
+        return;
+      }
+
+      setAuthChecked(true);
+    };
+
+    checkAuth();
+  }, [router]);
+
+  useEffect(() => {
+    if (!authChecked) return;
+
     const loadHistory = async () => {
       try {
         const token = localStorage.getItem("token");
 
         if (!token) {
-          setError("Please login to view your history.");
+          router.replace("/login");
           return;
         }
 
@@ -49,7 +69,15 @@ export default function HistoryPage() {
     };
 
     loadHistory();
-  }, []);
+  }, [authChecked, router]);
+
+  if (!authChecked) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-muted-foreground">Checking authentication...</p>
+      </main>
+    );
+  }
 
   if (loading) {
     return <main className="p-10 text-center">Loading history...</main>;
