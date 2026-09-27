@@ -47,3 +47,4 @@ Thumbs.db
 !.yarn/versions
 client/next-env.d.ts
 client/next-env.d.ts
+server/poster-test.png

@@ -195,27 +195,29 @@ export const renderPoster = async ({
         };
       }
 
-      if (slot.type !== "headline" || !layout) {
+      if (slot.type !== "headline") {
         return slot;
       }
 
-      const position = layout.headlinePosition;
-      const align: TextSlot["align"] =
-        position === "top-center"
+      const position = layout?.headlinePosition;
+      const align: TextSlot["align"] = position
+        ? position === "top-center"
           ? "center"
           : position === "top-left"
             ? "left"
-            : "right";
+            : "right"
+        : slot.align;
       const width = Math.min(slot.width, 1040);
 
       return {
         ...slot,
-        x:
-          position === "top-left"
+        x: position
+          ? position === "top-left"
             ? 80
             : position === "top-right"
               ? 1200 - width - 80
-              : 80,
+              : 80
+          : slot.x,
         y: slot.width >= 700 ? 70 : slot.y,
         width,
         align,
