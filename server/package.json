@@ -7,7 +7,8 @@
     "dev": "tsx watch src/server.ts",
     "seed:templates": "tsx src/seeds/templates.ts",
     "build": "tsc",
-    "start": "node dist/src/server.js"
+    "start": "node dist/src/server.js",
+    "postinstall": "puppeteer browsers install chrome"
   },
   "keywords": [],
   "type": "module",
@@ -25,7 +26,7 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.10.2",
     "multer": "^2.4.0",
-    "puppeteer":  "^24.0.0",
+    "puppeteer": "^25.12.0",
     "zod": "^4.6.5"
   },
   "devDependencies": {
