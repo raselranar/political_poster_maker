@@ -129,7 +129,7 @@ export const renderPoster = async ({
       "--single-process",
       "--no-zygote",
     ],
-    executablePath: "/usr/bin/google-chrome",
+    // executablePath: "/usr/bin/google-chrome",
     // headless: false,
   });
 
